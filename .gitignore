@@ -4,6 +4,7 @@ desktop.ini
 /docs
 
 # Node
+/apps/api/node_modules
 /node_modules/
 npm-debug.log*
 yarn-debug.log*
