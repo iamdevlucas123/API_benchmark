@@ -1,0 +1,116 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum HttpMethod {
+  GET
+  POST
+  PUT
+  PATCH
+  DELETE
+}
+
+enum TestStatus {
+  PENDING
+  RUNNING
+  SUCCESS
+  FAILED
+}
+
+model User {
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  passwordHash String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  apis Api[]
+
+  @@map("users")
+}
+
+model Api {
+  id          String  @id @default(cuid())
+  name        String
+  baseUrl     String
+  description String?
+
+  ownerId String
+  owner   User @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  endpoints Endpoint[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([ownerId])
+  @@map("apis")
+}
+
+model Endpoint {
+  id     String @id @default(cuid())
+  path   String
+  method HttpMethod
+
+  apiId String
+  api   Api @relation(fields: [apiId], references: [id], onDelete: Cascade)
+
+  testRuns TestRun[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([apiId])
+  @@map("endpoints")
+}
+
+model TestRun {
+  id String @id @default(cuid())
+
+  endpointId Endpoint
+  endpoint   Endpoint @relation(fields: [endpointId], references: [id], onDelete: Cascade)
+
+  duration     Int
+  virtualUsers Int
+
+  status TestStatus
+
+  startedAt  DateTime
+  finishedAt DateTime
+
+  metric TestMetric?
+
+  createdAt DateTime @default(now())
+
+  @@index([endpointId])
+  @@index([status])
+  @@map("test_runs")
+}
+
+model TestMetric {
+  id String @id @default(cuid())
+
+  testRunId String  @unique
+  testRun   TestRun @relation(fields: [testRunId], references: [id], onDelete: Cascade)
+
+  averageLatency   Float
+  p95              Float
+  p99              Float
+  maxLatency       Float
+
+  requestsPerSecond Float
+
+  totalRequests  Int
+  failedRequests Int
+
+  createdAt DateTime @default(now())
+
+  @@map("test_metrics")
+}
