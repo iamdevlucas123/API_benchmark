@@ -1,0 +1,59 @@
+generator client {
+	provider = "prisma-client-js"
+}
+
+datasource db {
+	provider = "postgresql"
+	url      = env("DATABASE_URL")
+}
+
+enum HttpMethod {
+	GET
+	POST
+	PUT
+	DELETE
+	PATCH
+}
+
+enum TestStatus {
+	QUEUED
+	RUNNING
+	COMPLETED
+	FAILED
+}
+
+model User {
+	id        String      @id @default(cuid())
+	clerkId   String      @unique
+	email     String      @unique
+	apiTargets ApiTarget[]
+	createdAt DateTime    @default(now())
+}
+
+model ApiTarget {
+	id        String      @id @default(cuid())
+	name      String
+	baseUrl   String
+	endpoint  String
+	method    HttpMethod  @default(GET)
+	headers   Json?
+	userId    String
+	user      User        @relation(fields: [userId], references: [id])
+	testRuns  TestRun[]
+	createdAt DateTime    @default(now())
+}
+
+model TestRun {
+	id          String     @id @default(cuid())
+	apiTargetId String
+	apiTarget   ApiTarget  @relation(fields: [apiTargetId], references: [id])
+	status      TestStatus @default(QUEUED)
+	vus         Int
+	durationSec Int
+	p95         Float?
+	rps         Float?
+	errorRate   Float?
+	rawResult   Json?
+	createdAt   DateTime   @default(now())
+	finishedAt  DateTime?
+}
